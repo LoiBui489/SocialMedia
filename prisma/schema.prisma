@@ -1,0 +1,108 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "mysql"
+    url      = env("DATABASE_URL")
+}
+
+model User {
+    id          String   @id
+    email       String   @unique
+    username    String   @unique
+    displayName String?
+    bio         String?
+    job         String?
+    location    String?
+    website     String?
+    avatar      String?
+    cover       String?
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    // Relation with Post
+    posts Post[]
+
+    // Relation with Interaction
+    like      Like[]
+    saved     Saved[]
+    follower  Follow[] @relation("FollowerToUser")
+    following Follow[] @relation("FollowingToUser")
+}
+
+model Post {
+    id          Int      @id @default(autoincrement())
+    description String?  @db.VarChar(255)
+    image       String?  @db.VarChar(255)
+    imageHeight Int?
+    video       String?  @db.VarChar(255)
+    isSensitive Boolean  @default(false)
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    // Relation with User
+    user   User   @relation(fields: [userId], references: [id])
+    userId String
+
+    // Relation with Repost
+    originalPost   Post?  @relation("RePostToPost", fields: [originalPostId], references: [id])
+    originalPostId Int?
+    rePosts        Post[] @relation("RePostToPost")
+
+    // Relation with Comment
+    parentPost   Post?  @relation("CommentToPost", fields: [parentPostId], references: [id])
+    parentPostId Int?
+    comments     Post[] @relation("CommentToPost")
+
+    // Relation with Interaction
+    like  Like[]
+    saved Saved[]
+}
+
+// Interaction with Post
+model Like {
+    id        Int      @id @default(autoincrement())
+    createdAt DateTime @default(now())
+
+    // Relation with User
+    user   User   @relation(fields: [userId], references: [id])
+    userId String
+
+    // Relation with Post
+    post   Post @relation(fields: [postId], references: [id])
+    postId Int
+}
+
+model Saved {
+    id        Int      @id @default(autoincrement())
+    createdAt DateTime @default(now())
+
+    // Relation with User
+    user   User   @relation(fields: [userId], references: [id])
+    userId String
+
+    // Relation with Post
+    post   Post @relation(fields: [postId], references: [id])
+    postId Int
+}
+
+// --------------------------------------
+
+// Interaction with User
+model Follow {
+    id        Int      @id @default(autoincrement())
+    createdAt DateTime @default(now())
+
+    // Relation with User
+    follower    User?  @relation("FollowerToUser", fields: [followerId], references: [id])
+    followerId  String
+    following   User?  @relation("FollowingToUser", fields: [followingId], references: [id])
+    followingId String
+}
